@@ -12,3 +12,6 @@ libtool
 stamp-h1
 .deps
 .libs
+/src/artnet2mendeleev
+*.o
+/config

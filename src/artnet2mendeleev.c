@@ -35,8 +35,9 @@
 #define VERSION "<undefined version>"
 #endif
 
+#define CHANNELS 6
+
 int verbose = 0 ;
-int nbr_of_channels = 6;
 struct mosquitto *mosq = NULL;
 
 /* MQTT parameters */
@@ -44,6 +45,8 @@ static const char *mqtt_host = "localhost";
 static int mqtt_port = 1883;
 static int mqtt_keepalive = 10;
 static int mqtt_qos = -1;
+
+uint8_t cache[9*18][CHANNELS];
 
 /* artnet paramters */
 artnet_node node;
@@ -93,21 +96,26 @@ int dmx_handler(artnet_node n, int port, void *d) {
   uint8_t *data ;
   int kastindex;
   int len ;
-  data = artnet_read_dmx(n, port, &len) ;
-  artnet_read_dmx(n, port, &len) ;
+  data = artnet_read_dmx(n, port, &len);
+  artnet_read_dmx(n, port, &len);
 
-  kastindex = (port * (512/nbr_of_channels)) + 1;
+  kastindex = (port * (512/CHANNELS)) + 1;
 
-  for(int i=0; i<len; i+=nbr_of_channels) {
-    char *topic = get_topic(kastindex);
-    uint8_t msg[nbr_of_channels];
-    memcpy(msg, data + i, nbr_of_channels);
 
-    if (mosquitto_publish(mosq, NULL, topic, nbr_of_channels, msg, mqtt_qos, false) != MOSQ_ERR_SUCCESS) {
-      fprintf(stderr, "mosquitto_publish: Call failed\n");
+  for(int i=0; i<(len-(512%CHANNELS)); i+=CHANNELS) {
+    if (memcmp(cache[kastindex], data + i, CHANNELS) != 0) {
+      char *topic = get_topic(kastindex);
+      uint8_t msg[CHANNELS];
+
+      memcpy(msg, data + i, CHANNELS);
+      memcpy(cache[kastindex], data + i, CHANNELS);
+      if (mosquitto_publish(mosq, NULL, topic, CHANNELS, msg, mqtt_qos, false) != MOSQ_ERR_SUCCESS) {
+        fprintf(stderr, "mosquitto_publish: Call failed\n");
+      }
+
+      free(topic);
     }
     kastindex++;
-    free(topic);
   }
   return 0;
 }
@@ -130,16 +138,14 @@ void mqtt_connect_callback(struct mosquitto *mosq, void *obj, int rc)
  */
 void cleanup(void)
 {
-  if (mosq != NULL)
-  {
+  if (mosq != NULL) {
     mosquitto_destroy(mosq);
   }
 
   mosquitto_lib_cleanup();
 
-  if (node != NULL)
-  {
-    artnet_destroy(node) ;
+  if (node != NULL) {
+    artnet_destroy(node);
   }
 }
 
@@ -153,6 +159,7 @@ int main(int argc, char *argv[]) {
   char *str;
   char mqtt_name[32];
   memset(mqtt_name, '\0', sizeof(mqtt_name));
+  memset(cache, 0, sizeof(cache));
 
   setlocale(LC_ALL, "");
   /* argument parsing */
@@ -163,7 +170,7 @@ int main(int argc, char *argv[]) {
         NAME, VERSION, __DATE__, __TIME__);
         exit(0);
       case 'a':
-        ip_addr = (char *) strdup(optarg) ;
+        ip_addr = (char *) strdup(optarg);
         break;
       case 'h':
         mqtt_host = optarg;
@@ -192,32 +199,39 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  node = artnet_new(ip_addr, verbose) ; ;
+  node = artnet_new(ip_addr, verbose);
 
-  artnet_set_short_name(node, NAME) ;
-  artnet_set_long_name(node, "ArtNet Mendeleev Output Node") ;
-  artnet_set_node_type(node, ARTNET_NODE) ;
+  artnet_set_short_name(node, NAME);
+  artnet_set_long_name(node, "ArtNet Mendeleev Output Node");
+  artnet_set_node_type(node, ARTNET_NODE);
 
-  // set the first 2 ports to output dmx data
-  artnet_set_port_type(node, 0, ARTNET_ENABLE_OUTPUT, ARTNET_PORT_DMX) ;
-  artnet_set_port_type(node, 1, ARTNET_ENABLE_OUTPUT, ARTNET_PORT_DMX) ;
+  /* set the first 2 ports to output dmx data */
+  artnet_set_port_type(node, 0, ARTNET_ENABLE_OUTPUT, ARTNET_PORT_DMX);
+  artnet_set_port_type(node, 1, ARTNET_ENABLE_OUTPUT, ARTNET_PORT_DMX);
 
-  // Set subnet address
-  artnet_set_subnet_addr(node, 0x00) ;
+  /* Set subnet address */
+  artnet_set_subnet_addr(node, 0x00);
 
-  // set the universe address of the first 2 ports
-  artnet_set_port_addr(node, 0, ARTNET_OUTPUT_PORT, 0x00) ;
-  artnet_set_port_addr(node, 1, ARTNET_OUTPUT_PORT, 0x01) ;
+  /* set the universe address of the first 2 ports */
+  artnet_set_port_addr(node, 0, ARTNET_OUTPUT_PORT, 0x00);
+  artnet_set_port_addr(node, 1, ARTNET_OUTPUT_PORT, 0x01);
 
-  // set DMX handler
-  artnet_set_dmx_handler(node, dmx_handler, NULL) ;
+  /*
+   * The universe address of the port is made up from the subnet
+   * address and the port address. The four least significat bits
+   * are the port address, the four most significat are the subnet
+   * address.
+   */
 
-  // set the MQTT QOS
+  /* set DMX handler */
+  artnet_set_dmx_handler(node, dmx_handler, NULL);
+
+  /* set the MQTT QOS */
   if (mqtt_qos < 0) {
     mqtt_qos = !strcmp(mqtt_host ?: "", "localhost") ? 0 : 1;
   }
 
-  // Initialize MQTT client
+  /* Initialize MQTT client */
   mosquitto_lib_init();
   sprintf(mqtt_name, "%s-%i", NAME, getpid());
   mosq = mosquitto_new(mqtt_name, true, NULL);
@@ -226,27 +240,32 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  // Set the MQTT connect callback
+  /* Set the MQTT connect callback */
   mosquitto_connect_callback_set(mosq, mqtt_connect_callback);
 
-  // Try to connect
+  /* Try to connect */
   if (mosquitto_connect(mosq, mqtt_host, mqtt_port, mqtt_keepalive) != MOSQ_ERR_SUCCESS) {
     fprintf(stderr, "mosquitto_connect: Unable to connect\n");
     exit(EXIT_FAILURE);
   }
 
-  // Start the Artnet node
-  artnet_start(node) ;
+  /* Start the Artnet node */
+  artnet_start(node);
 
   while(1) {
-    // set a 1 second timeout on the read
-    // this way we send a DMX frame every second
-    // even if we don't get any ArtNet packets
-    artnet_read(node, 1) ;
+    /*
+     * set a 1 second timeout on the read
+     * this way we send a DMX frame every second
+     * even if we don't get any ArtNet packets
+     */
+    artnet_read(node, 1);
     mosquitto_loop(mosq, -1, 1);
   }
-  // never reached
-  artnet_destroy(node) ;
+
+  /* never reached */
+  artnet_destroy(node);
+  mosquitto_destroy(mosq);
+  mosquitto_lib_cleanup();
 
   return 0 ;
 }
