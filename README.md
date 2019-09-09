@@ -6,7 +6,7 @@ This is a bridge to control the Mendeleev project over Art-Net. More info on the
 
 The table of Mendeleev is divided as a table of 9 by 18. This means there are 72 nodes. Each node has 6 channels: red, blue, green, warm white, white, UV. So in total we have 972 channels. Since every DMX universe can only handle 512 channels, we need 2 universes.
 
-Nodes 1 to 86 are in the first DMX universe with address 0x0000. Nodes 87 to 162 are in the second universe with address 0x0001.
+Nodes 1 to 85 are in the first DMX universe with address 0x00. Nodes 86 to 162 are in the second universe with address 0x01.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ Go to the repository:
 
 Build the program:
 
-    autoreconf --install
+    autoreconf -i
     ./configure
     make
 
