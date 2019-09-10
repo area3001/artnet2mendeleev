@@ -46,6 +46,7 @@ static const char *mqtt_host = "localhost";
 static int mqtt_port = 1883;
 static int mqtt_keepalive = 10;
 static int mqtt_qos = -1;
+static bool mqttconnected = false;
 
 uint8_t cache[ELEMENTS][CHANNELS];
 
@@ -129,10 +130,11 @@ int dmx_handler(artnet_node n, int port, void *d) {
 void mqtt_connect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
   if (rc == 0) {
-    printf("MQTT Connection success\n");
+    mqttconnected = true;
   }
   else {
     fprintf(stderr, "mqtt_connect_callback: Connection failed\n");
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -142,6 +144,7 @@ void mqtt_connect_callback(struct mosquitto *mosq, void *obj, int rc)
 void cleanup(void)
 {
   if (mosq != NULL) {
+    mosquitto_loop_stop(mosq, true);
     mosquitto_destroy(mosq);
   }
 
@@ -252,8 +255,15 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  /* wait untill mqtt is connected */
+  while(!mqttconnected) {
+    mosquitto_loop(mosq, -1, 1);
+  }
+  printf("MQTT Connection success\n");
+
   /* Start the Artnet node */
   artnet_start(node);
+  mosquitto_loop_start(mosq);
 
   while(1) {
     /*
@@ -262,11 +272,11 @@ int main(int argc, char *argv[]) {
      * even if we don't get any ArtNet packets
      */
     artnet_read(node, 1);
-    mosquitto_loop(mosq, -1, 1);
   }
 
   /* never reached */
   artnet_destroy(node);
+  mosquitto_loop_stop(mosq, true);
   mosquitto_destroy(mosq);
   mosquitto_lib_cleanup();
 
