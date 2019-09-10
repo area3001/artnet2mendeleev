@@ -50,6 +50,142 @@ static bool mqttconnected = false;
 
 uint8_t cache[ELEMENTS][CHANNELS];
 
+
+enum PeriodicElement {
+    ELEMENT_H   =   1, // Hydrogen
+    ELEMENT_He  =   2, // Helium
+    ELEMENT_Li  =   3, // Lithium
+    ELEMENT_Be  =   4, // Beryllium
+    ELEMENT_B   =   5, // Boron
+    ELEMENT_C   =   6, // Carbon
+    ELEMENT_N   =   7, // Nitrogen
+    ELEMENT_O   =   8, // Oxygen
+    ELEMENT_F   =   9, // Fluorine
+    ELEMENT_Ne  =  10, // Neon
+    ELEMENT_Na  =  11, // Sodium
+    ELEMENT_Mg  =  12, // Magnesium
+    ELEMENT_Al  =  13, // Aluminum
+    ELEMENT_Si  =  14, // Silicon
+    ELEMENT_P   =  15, // Phosphorus
+    ELEMENT_S   =  16, // Sulfur
+    ELEMENT_Cl  =  17, // Chlorine
+    ELEMENT_Ar  =  18, // Argon
+    ELEMENT_K   =  19, // Potassium
+    ELEMENT_Ca  =  20, // Calcium
+    ELEMENT_Sc  =  21, // Scandium
+    ELEMENT_Ti  =  22, // Titanium
+    ELEMENT_V   =  23, // Vanadium
+    ELEMENT_Cr  =  24, // Chromium
+    ELEMENT_Mn  =  25, // Manganese
+    ELEMENT_Fe  =  26, // Iron
+    ELEMENT_Co  =  27, // Cobalt
+    ELEMENT_Ni  =  28, // Nickel
+    ELEMENT_Cu  =  29, // Copper
+    ELEMENT_Zn  =  30, // Zinc
+    ELEMENT_Ga  =  31, // Gallium
+    ELEMENT_Ge  =  32, // Germanium
+    ELEMENT_As  =  33, // Arsenic
+    ELEMENT_Se  =  34, // Selenium
+    ELEMENT_Br  =  35, // Bromine
+    ELEMENT_Kr  =  36, // Krypton
+    ELEMENT_Rb  =  37, // Rubidium
+    ELEMENT_Sr  =  38, // Strontium
+    ELEMENT_Y   =  39, // Yttrium
+    ELEMENT_Zr  =  40, // Zirconium
+    ELEMENT_Nb  =  41, // Niobium
+    ELEMENT_Mo  =  42, // Molybdenum
+    ELEMENT_Tc  =  43, // Technetium
+    ELEMENT_Ru  =  44, // Ruthenium
+    ELEMENT_Rh  =  45, // Rhodium
+    ELEMENT_Pd  =  46, // Palladium
+    ELEMENT_Ag  =  47, // Silver
+    ELEMENT_Cd  =  48, // Cadmium
+    ELEMENT_In  =  49, // Indium
+    ELEMENT_Sn  =  50, // Tin
+    ELEMENT_Sb  =  51, // Antimony
+    ELEMENT_Te  =  52, // Tellurium
+    ELEMENT_I   =  53, // Iodine
+    ELEMENT_Xe  =  54, // Xenon
+    ELEMENT_Cs  =  55, // Cesium
+    ELEMENT_Ba  =  56, // Barium
+    ELEMENT_La  =  57, // Lanthanum
+    ELEMENT_Ce  =  58, // Cerium
+    ELEMENT_Pr  =  59, // Praseodymium
+    ELEMENT_Nd  =  60, // Neodymium
+    ELEMENT_Pm  =  61, // Promethium
+    ELEMENT_Sm  =  62, // Samarium
+    ELEMENT_Eu  =  63, // Europium
+    ELEMENT_Gd  =  64, // Gadolinium
+    ELEMENT_Tb  =  65, // Terbium
+    ELEMENT_Dy  =  66, // Dysprosium
+    ELEMENT_Ho  =  67, // Holmium
+    ELEMENT_Er  =  68, // Erbium
+    ELEMENT_Tm  =  69, // Thulium
+    ELEMENT_Yb  =  70, // Ytterbium
+    ELEMENT_Lu  =  71, // Lutetium
+    ELEMENT_Hf  =  72, // Hafnium
+    ELEMENT_Ta  =  73, // Tantalum
+    ELEMENT_W   =  74, // Tungsten
+    ELEMENT_Re  =  75, // Rhenium
+    ELEMENT_Os  =  76, // Osmium
+    ELEMENT_Ir  =  77, // Iridium
+    ELEMENT_Pt  =  78, // Platinum
+    ELEMENT_Au  =  79, // Gold
+    ELEMENT_Hg  =  80, // Mercury
+    ELEMENT_Tl  =  81, // Thallium
+    ELEMENT_Pb  =  82, // Lead
+    ELEMENT_Bi  =  83, // Bismuth
+    ELEMENT_Po  =  84, // Polonium
+    ELEMENT_At  =  85, // Astatine
+    ELEMENT_Rn  =  86, // Radon
+    ELEMENT_Fr  =  87, // Francium
+    ELEMENT_Ra  =  88, // Radium
+    ELEMENT_Ac  =  89, // Actinium
+    ELEMENT_Th  =  90, // Thorium
+    ELEMENT_Pa  =  91, // Protactinium
+    ELEMENT_U   =  92, // Uranium
+    ELEMENT_Np  =  93, // Neptunium
+    ELEMENT_Pu  =  94, // Plutonium
+    ELEMENT_Am  =  95, // Americium
+    ELEMENT_Cm  =  96, // Curium
+    ELEMENT_Bk  =  97, // Berkelium
+    ELEMENT_Cf  =  98, // Californium
+    ELEMENT_Es  =  99, // Einsteinium
+    ELEMENT_Fm  = 100, // Fermium
+    ELEMENT_Md  = 101, // Mendelevium
+    ELEMENT_No  = 102, // Nobelium
+    ELEMENT_Lr  = 103, // Lawrencium
+    ELEMENT_Rf  = 104, // Rutherfordium
+    ELEMENT_Db  = 105, // Dubnium
+    ELEMENT_Sg  = 106, // Seaborgium
+    ELEMENT_Bh  = 107, // Bohrium
+    ELEMENT_Hs  = 108, // Hassium
+    ELEMENT_Mt  = 109, // Meitnerium
+    ELEMENT_Ds  = 110, // Darmstadtium
+    ELEMENT_Rg  = 111, // Roentgenium
+    ELEMENT_Cp  = 112, // Copernicium
+    ELEMENT_Nh  = 113, // Nihonium
+    ELEMENT_Fl  = 114, // Flerovium
+    ELEMENT_Mc  = 115, // Moscovium
+    ELEMENT_Lv  = 116, // Livermorium
+    ELEMENT_Ts  = 117, // Tennessine
+    ELEMENT_Og  = 118, // Oganesson
+    ELEMENT_MAX = 119
+};
+
+
+static const int elementmap[ELEMENTS] = {
+  ELEMENT_H ,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1, ELEMENT_He,
+  ELEMENT_Li, ELEMENT_Be,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1, ELEMENT_B , ELEMENT_C , ELEMENT_N , ELEMENT_O , ELEMENT_F , ELEMENT_Ne,
+  ELEMENT_Na, ELEMENT_Mg,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1,         -1, ELEMENT_Al, ELEMENT_Si, ELEMENT_P , ELEMENT_S , ELEMENT_Cl, ELEMENT_Ar,
+  ELEMENT_K , ELEMENT_Ca, ELEMENT_Sc, ELEMENT_Ti, ELEMENT_V , ELEMENT_Cr, ELEMENT_Mn, ELEMENT_Fe, ELEMENT_Co, ELEMENT_Ni, ELEMENT_Cu, ELEMENT_Zn, ELEMENT_Ga, ELEMENT_Ge, ELEMENT_As, ELEMENT_Se, ELEMENT_Br, ELEMENT_Kr,
+  ELEMENT_Rb, ELEMENT_Sr, ELEMENT_Y , ELEMENT_Zr, ELEMENT_Nb, ELEMENT_Mo, ELEMENT_Tc, ELEMENT_Ru, ELEMENT_Rh, ELEMENT_Pd, ELEMENT_Ag, ELEMENT_Cd, ELEMENT_In, ELEMENT_Sn, ELEMENT_Sb, ELEMENT_Te, ELEMENT_I , ELEMENT_Xe,
+  ELEMENT_Cs, ELEMENT_Ba, ELEMENT_Lu, ELEMENT_Hf, ELEMENT_Ta, ELEMENT_W , ELEMENT_Re, ELEMENT_Os, ELEMENT_Ir, ELEMENT_Pt, ELEMENT_Au, ELEMENT_Hg, ELEMENT_Tl, ELEMENT_Pb, ELEMENT_Bi, ELEMENT_Po, ELEMENT_At, ELEMENT_Rn,
+  ELEMENT_Fr, ELEMENT_Ra, ELEMENT_Lr, ELEMENT_Rf, ELEMENT_Db, ELEMENT_Sg, ELEMENT_Bh, ELEMENT_Hs, ELEMENT_Mt, ELEMENT_Ds, ELEMENT_Rg, ELEMENT_Cp, ELEMENT_Nh, ELEMENT_Fl, ELEMENT_Mc, ELEMENT_Lv, ELEMENT_Ts, ELEMENT_Og,
+          -1,         -1, ELEMENT_La, ELEMENT_Ce, ELEMENT_Pr, ELEMENT_Nd, ELEMENT_Pm, ELEMENT_Sm, ELEMENT_Eu, ELEMENT_Gd, ELEMENT_Tb, ELEMENT_Dy, ELEMENT_Ho, ELEMENT_Er, ELEMENT_Tm, ELEMENT_Yb,         -1,         -1,
+          -1,         -1, ELEMENT_Ac, ELEMENT_Th, ELEMENT_Pa, ELEMENT_U , ELEMENT_Np, ELEMENT_Pu, ELEMENT_Am, ELEMENT_Cm, ELEMENT_Bk, ELEMENT_Cf, ELEMENT_Es, ELEMENT_Fm, ELEMENT_Md, ELEMENT_No,         -1,         -1
+};
+
 /* artnet paramters */
 artnet_node node;
 
@@ -106,6 +242,10 @@ int dmx_handler(artnet_node n, int port, void *d) {
   for(int i=0; i<(len-(512%CHANNELS)); i+=CHANNELS) {
     if (kastindex > ELEMENTS) {
       break;
+    }
+    if (elementmap[kastindex-1] == -1) {
+      kastindex++;
+      continue;
     }
     if (memcmp(cache[kastindex], data + i, CHANNELS) != 0) {
       char *topic = get_topic(kastindex);
