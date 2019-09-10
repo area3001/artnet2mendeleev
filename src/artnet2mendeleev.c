@@ -36,6 +36,7 @@
 #endif
 
 #define CHANNELS 6
+#define ELEMENTS (9*18)
 
 int verbose = 0 ;
 struct mosquitto *mosq = NULL;
@@ -46,7 +47,7 @@ static int mqtt_port = 1883;
 static int mqtt_keepalive = 10;
 static int mqtt_qos = -1;
 
-uint8_t cache[9*18][CHANNELS];
+uint8_t cache[ELEMENTS][CHANNELS];
 
 /* artnet paramters */
 artnet_node node;
@@ -101,8 +102,10 @@ int dmx_handler(artnet_node n, int port, void *d) {
 
   kastindex = (port * (512/CHANNELS)) + 1;
 
-
   for(int i=0; i<(len-(512%CHANNELS)); i+=CHANNELS) {
+    if (kastindex > ELEMENTS) {
+      break;
+    }
     if (memcmp(cache[kastindex], data + i, CHANNELS) != 0) {
       char *topic = get_topic(kastindex);
       uint8_t msg[CHANNELS];
